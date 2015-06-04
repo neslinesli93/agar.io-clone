@@ -2,6 +2,7 @@ var playerName;
 var playerNameInput = document.getElementById('playerNameInput');
 var socket;
 var KEY_ENTER = 13;
+var borderDraw = false;
 
 
 function startGame() {
@@ -33,6 +34,18 @@ window.onload = function() {
             startGame();
         } else {
             nickErrorText.style.display = 'inline';
+        }
+    };
+
+    var settingsMenu = document.getElementById('settingsButton');
+
+    settingsMenu.onclick = function () {
+        if (settings.style.display != 'block') {
+            instructions.style.display = 'none';
+            settings.style.display = 'block';
+        } else {
+            instructions.style.display = 'block';
+            settings.style.display = 'none';
         }
     };
 
@@ -112,7 +125,13 @@ function outOfBounds() {
     target = { x : 0, y: 0 };
 }
 
-
+function visibleBorder() {
+        if (document.getElementById('visBord').checked) {
+            borderDraw = true;
+        } else {
+            borderDraw= false;
+        }
+}
 
 var graph = c.getContext('2d');
 
@@ -475,12 +494,17 @@ function gameLoop() {
             graph.fillStyle = backgroundColor;
             graph.fillRect(0, 0, screenWidth, screenHeight);
             drawgrid();
-            drawborder();
+
+            if(borderDraw){
+                drawborder();
+            }
             
             foods.forEach(function(f){ drawFood(f); });
             
-            drawborder();
-            
+            if(borderDraw){
+                drawborder();
+            }
+
             for (var i = 0; i < enemies.length; i++) {
                 if (enemies[i].id != player.id) {
                     drawEnemy(enemies[i]);
