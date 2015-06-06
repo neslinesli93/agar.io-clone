@@ -70,7 +70,7 @@ function movePlayer(player, target) {
     var dist = Math.sqrt(Math.pow(target.y, 2) + Math.pow(target.x, 2));
     var deg = Math.atan2(target.y, target.x);
 
-    var slowDown = Math.log(player.mass);
+    var slowDown = Math.log10(player.mass);
 
     var deltaY = player.speed * Math.sin(deg)/ slowDown;
     var deltaX = player.speed * Math.cos(deg)/ slowDown;
