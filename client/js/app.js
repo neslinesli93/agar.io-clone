@@ -481,7 +481,7 @@ function gameLoop() {
             
             drawborder();
             
-            for (i = 0; i < enemies.length; i++) {
+            for (var i = 0; i < enemies.length; i++) {
                 if (enemies[i].id != player.id) {
                     drawEnemy(enemies[i]);
                 }
