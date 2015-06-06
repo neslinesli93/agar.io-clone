@@ -4,6 +4,8 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
+var SAT = require('sat');
+
 var config = require('./config.json');
 
 var users = [];
@@ -32,6 +34,9 @@ var defaultPlayerSize = config.defaultPlayerSize;
 
 var eatableMassDistance = config.eatableMassDistance;
 
+var V = SAT.Vector;
+var C = SAT.Circle;
+
 app.use(express.static(__dirname + '/../client'));
 
 function genPos(from, to) {
@@ -55,36 +60,25 @@ function generateFood(target) {
 }
 
 // arr is for example users or foods
+// http://jsperf.com/while-vs-map-findindex/2
 function findIndex(arr, id) {
     var len = arr.length;
 
     while (len--) {
         if (arr[len].id === id) {
-            return len;
+        return len;
         }
     }
 
     return -1;
-
 }
 
 function randomColor() {
-    var color = '#' + ('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6),
-        difference = 32,
-        c = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color),
-        r = parseInt(c[1], 16) - difference,
-        g = parseInt(c[2], 16) - difference,
-        b = parseInt(c[3], 16) - difference;
-
-    if (r < 0) {
-        r = 0;
-    }
-    if (g < 0) {
-        g = 0;
-    }
-    if (b < 0) {
-        b = 0;
-    }
+    var color = '#' + ('00000' + (Math.random() * (1 << 24) | 0).toString(16)).slice(-6);
+    var c = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
+    var r = (parseInt(c[1], 16) - 32) > 0 ? (parseInt(c[1], 16) - 32) : 0;
+    var g = (parseInt(c[2], 16) - 32) > 0 ? (parseInt(c[2], 16) - 32) : 0;
+    var b = (parseInt(c[3], 16) - 32) > 0 ? (parseInt(c[3], 16) - 32) : 0;
 
     return {
         fill: color,
@@ -110,8 +104,8 @@ function hitTest(start, end, min) {
 function movePlayer(player, target) {
     var dist = Math.sqrt(Math.pow(target.y - player.screenHeight / 2, 2) + Math.pow(target.x - player.screenWidth / 2, 2)),
        deg = Math.atan2(target.y - player.screenHeight / 2, target.x - player.screenWidth / 2);
-    
-    //Slows player as mass increases. 
+
+    //Slows player as mass increases.
     var slowDown = ((player.mass + 1)/17) + 1;
 
 	var deltaY = player.speed * Math.sin(deg)/ slowDown;
@@ -160,6 +154,7 @@ io.on('connection', function (socket) {
         for (var i = 0; i < newFoodPerPlayer; i++) {
             generateFood(player);
         }
+
         updatereq = true;
     });
 
@@ -169,97 +164,84 @@ io.on('connection', function (socket) {
 
     socket.on('disconnect', function () {
         var playerDisconnected = findPlayer(userID);
-        
-	if(playerDisconnected.hasOwnProperty(name)){
-        removePlayer(userID);
 
-        console.log('User #' + userID + ' disconnected');
+        if (playerDisconnected.hasOwnProperty('name')) {
+            removePlayer(userID);
 
-        socket.broadcast.emit(
-            'playerDisconnect',
-            {
-                playersList: users,
-                disconnectName: playerDisconnected.name
-            }
-        );
-        }
-        else{
-        	console.log("Unknown user disconnected");
+            console.log('User #' + userID + ' disconnected');
+
+            socket.broadcast.emit(
+                'playerDisconnect',
+                {
+                    playersList: users,
+                    disconnectName: playerDisconnected.name
+                }
+            );
+        } else {
+            console.log('Unknown user disconnected');
         }
     });
 
-    socket.on('playerChat', function (data) {
+    socket.on('playerChat', function(data) {
         var _sender = data.sender.replace(/(<([^>]+)>)/ig, '');
         var _message = data.message.replace(/(<([^>]+)>)/ig, '');
         socket.broadcast.emit('serverSendPlayerChat', {sender: _sender, message: _message});
     });
 
-    socket.on('pass', function (data) {
-        if(data[0] == config.adminPass){
-                console.log("Someone just logged in as an admin");
-                socket.emit('serverMSG', "Welcome back " + currentPlayer.name);
-                socket.broadcast.emit('serverMSG', currentPlayer.name + " just logged in as admin!");
-                currentPlayer.admin = true;
-        }
-        else{
-                console.log("Incorrect Admin Password received");
-                socket.emit('serverMSG', "Password incorrect attempt logged.");
-                // TODO actually log incorrect passwords
+    socket.on('pass', function(data) {
+        if (data[0] === config.adminPass) {
+            console.log('Someone just logged in as an admin');
+            socket.emit('serverMSG', 'Welcome back ' + currentPlayer.name);
+            socket.broadcast.emit('serverMSG', currentPlayer.name + ' just logged in as admin!');
+            currentPlayer.admin = true;
+        } else {
+            console.log('Incorrect Admin Password received');
+            socket.emit('serverMSG', 'Password incorrect attempt logged.');
+            // TODO actually log incorrect passwords
         }
     });
 
-    socket.on('kick', function (data) {
-        if(currentPlayer.admin){
-                for (var e = 0; e < users.length; e++) {
-                      if(users[e].name == data[0]){
-                           sockets[users[e].id].emit('kick');
-                           sockets[users[e].id].disconnect();
-                           users.splice(e, 1);
-                           console.log("User kicked successfully");
-                           socket.emit('serverMSG', "User kicked successfully");
-                      }
+    socket.on('kick', function(data) {
+        if (currentPlayer.admin) {
+            for (var e = 0; e < users.length; e++) {
+                if (users[e].name === data[0]) {
+                    sockets[users[e].id].emit('kick');
+                    sockets[users[e].id].disconnect();
+                    users.splice(e, 1);
+                    console.log('User kicked successfully');
+                    socket.emit('serverMSG', 'User kicked successfully');
                 }
-        }
-        else{
-                console.log("Trying admin commands without admin privileges");
-                socket.emit('serverMSG', "You are not permitted to use this command");
+            }
+        } else {
+            console.log('Trying admin commands without admin privileges');
+            socket.emit('serverMSG', 'You are not permitted to use this command');
         }
     });
 
     // Heartbeat function, update everytime
-    socket.on('0', function (target) {
-     // if you want to use uncomment the line below
-    //    console.log(currentPlayer.x + " " + currentPlayer.y);
+    socket.on('0', function(target) {
+
         if (target.x !== currentPlayer.x || target.y !== currentPlayer.y) {
             movePlayer(currentPlayer, target);
 
-            for (var f = 0; f < foods.length; f++) {
-                if (hitTest(
-                        {x: foods[f].x, y: foods[f].y},
-                        {x: currentPlayer.x, y: currentPlayer.y},
-                        currentPlayer.mass + defaultPlayerSize
-                    )) {
-                    foods[f] = {};
-                    foods.splice(f, 1);
+            var playerCircle = new C(new V(currentPlayer.x, currentPlayer.y), currentPlayer.mass + config.defaultPlayerSize);
 
-                    if (currentPlayer.mass < maxSizeMass) {
-                        currentPlayer.mass += foodMass;
-                    }
+            var foodEaten = foods
+                .map( function(food) { return SAT.pointInCircle(new V(food.x, food.y), playerCircle); })
+                .reduce( function(a, b, c) { return b ? a.concat(c) : a; }, []);
 
-                    if (currentPlayer.speed < maxMoveSpeed) {
-                        currentPlayer.speed += currentPlayer.mass / massDecreaseRatio;
-                    }
+            foodEaten.forEach( function(food) {
+                foods[food] = {};
+                foods.splice(food, 1);
+                generateFood(currentPlayer);
+            });
 
-                    console.log('Food eaten');
-                    
+            currentPlayer.mass += foodMass * foodEaten.length;
+            currentPlayer.speed += (currentPlayer.mass / massDecreaseRatio) * foodEaten.length;
 
-                    // Respawn food
-                    for (var r = 0; r < respawnFoodPerPlayer; r++) {
-                        generateFood(currentPlayer);
-                    }
-                    updatereq = true;
-                    break;
-                }
+            if (foodEaten.length) {
+                console.log('Food eaten: ' + foodEaten);
+                updatereq = true;
             }
 
             for (var e = 0; e < users.length; e++) {
@@ -304,16 +286,14 @@ io.on('connection', function (socket) {
             }
 
             // Do some continuous emit
-               if(updatereq){
-                              socket.emit('serverTellPlayerMove', currentPlayer, foods);
-                              socket.broadcast.emit('serverUpdateAll', users, foods);
-                              updatereq = false;
-               }
-               else{
-                              socket.emit('serverTellPlayerMove', currentPlayer, 0);
-                              socket.broadcast.emit('serverUpdateAll', users, 0);
-               }
-            
+            if (updatereq) {
+                socket.emit('serverTellPlayerMove', currentPlayer, foods);
+                socket.broadcast.emit('serverUpdateAll', users, foods);
+                updatereq = false;
+            } else {
+                socket.emit('serverTellPlayerMove', currentPlayer, 0);
+                socket.broadcast.emit('serverUpdateAll', users, 0);
+            }
         }
     });
 });
