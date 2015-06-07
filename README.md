@@ -7,6 +7,9 @@ Agar.io Clone
 If you cloned the original repo and then pulled from this branch, you will get errors due to devDependencies being moved to dependencies under package.json. To fix this, just run this command after you fork this repo:
 > npm install
 
+**Stats**
+---------
+
 [![GitHub Stars](https://img.shields.io/github/stars/huytd/agar.io-clone.svg)](https://github.com/huytd/agar.io-clone/stargazers)
 [![GitHub Issues](https://img.shields.io/github/issues/huytd/agar.io-clone.svg)](https://github.com/huytd/agar.io-clone/issues)
 [![GitHub Wiki](https://img.shields.io/badge/project-wiki-ff69b4.svg)](https://github.com/huytd/agar.io-clone/wiki/Home)
