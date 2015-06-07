@@ -1,6 +1,12 @@
 Agar.io Clone
 =============
 
+**Important**
+-------------
+
+If you cloned the original repo and then pulled from this branch, you will get errors due to devDependencies being moved to dependencies under package.json. To fix this, just run this command after you fork this repo:
+> npm install
+
 [![GitHub Stars](https://img.shields.io/github/stars/huytd/agar.io-clone.svg)](https://github.com/huytd/agar.io-clone/stargazers)
 [![GitHub Issues](https://img.shields.io/github/issues/huytd/agar.io-clone.svg)](https://github.com/huytd/agar.io-clone/issues)
 [![GitHub Wiki](https://img.shields.io/badge/project-wiki-ff69b4.svg)](https://github.com/huytd/agar.io-clone/wiki/Home)
@@ -13,11 +19,7 @@ A simple Agar.io clone built with socket.io and HTML5 Canvas on top of NodeJS.
 ![Image](http://i.imgur.com/O3rP7cg.png)
 
 ## Live Demos
-[![Singapore](https://img.shields.io/badge/singapore-offline-red.svg)](http://codedaily.vn:3000/) 
-[![Heroku EU](https://img.shields.io/badge/heroku eu-online-green.svg)](https://agar-clone.herokuapp.com/) 
-[![Heroku US](https://img.shields.io/badge/heroku us-online-green.svg)](https://agar-clone-us.herokuapp.com/) 
-[![Cloud9](https://img.shields.io/badge/cloud9-offline-red.svg)](https://agar-io-clone-d3vont3ch.c9.io/) 
-[![TS3Bahu](https://img.shields.io/badge/TS3Bahu-offline-red.svg)](http://agar.ts3bahu.com:3000)
+[![Heroku](https://img.shields.io/badge/heroku eu-online-green.svg)](https://raga-totally-not-agar.herokuapp.com/) 
 
 ---
 
